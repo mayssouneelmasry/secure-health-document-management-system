@@ -188,7 +188,7 @@ ADMIN_PASSWORD=AdminSecure123!
 # Server Configuration
 FLASK_DEBUG=False
 USE_SSL_DEV=False
-
+```
 ---
 
 ### Installation Steps
