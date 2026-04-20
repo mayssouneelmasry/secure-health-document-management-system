@@ -194,29 +194,43 @@ USE_SSL_DEV=False
 ### Installation Steps
 
 1. Clone the repository
+```
 git clone https://github.com/yourusername/secure-health-document-management-system.git
 cd secure-health-document-management-system
+```
 
-2. Create virtual environment
+3. Create virtual environment
+```
 python -m venv venv
 source venv/bin/activate # On Windows: venv\Scripts\activate
+```
 
-3. Install dependencies
+5. Install dependencies
+```
 pip install flask flask-sqlalchemy flask-login werkzeug authlib python-dotenv pyotp qrcode pycryptodome cryptography email-validator matplotlib PyJWT pymysql
+```
 
-4. Configure database
+7. Configure database
+```
 - Start XAMPP/WAMP and enable MySQL
 - Create database: `info_db_project`
 - Run application (tables auto-create)
+```
 
 5. Generate encryption key
+```
 python -c "import base64, os; print(base64.urlsafe_b64encode(os.urandom(32)).decode())"
+```
 
-6. Run the application
+7. Run the application
+```
 python main.py
+```
 
-7. Access the application
+9. Access the application
+```
 - Open browser to: `http://localhost:5000`
+```
 
 ---
 
