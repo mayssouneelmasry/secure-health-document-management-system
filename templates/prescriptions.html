@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Prescriptions{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <header class="pb-3 mb-4 border-bottom">
+        <h1 class="h2"><i class="fas fa-prescription-bottle me-2"></i>Manage Prescriptions</h1>
+    </header>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    {% if current_user.role in ['doctor', 'admin'] %}
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h3 class="h5 mb-0"><i class="fas fa-plus-circle me-2"></i>Add New Prescription</h3>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('documents.manage_prescriptions') }}">
+                <div class="mb-3">
+                    <label for="user_id" class="form-label">Patient</label>
+                    <select class="form-select" id="user_id" name="user_id" required>
+                        <option value="">Select a patient</option>
+                        {% for user in users %}
+                        <option value="{{ user.id }}">{{ user.email }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="medication" class="form-label">Medication</label>
+                    <input type="text" class="form-control" id="medication" name="medication" required>
+                </div>
+                <div class="mb-3">
+                    <label for="dosage" class="form-label">Dosage</label>
+                    <input type="text" class="form-control" id="dosage" name="dosage">
+                </div>
+                <div class="mb-3">
+                    <label for="prescribed_date" class="form-label">Prescribed Date</label>
+                    <input type="date" class="form-control" id="prescribed_date" name="prescribed_date" required>
+                </div>
+                <div class="mb-3">
+                    <label for="visit_id" class="form-label">Related Doctor Visit (Optional)</label>
+                    <select class="form-select" id="visit_id" name="visit_id">
+                        <option value="">None</option>
+                        {% for visit in visits %}
+                        <option value="{{ visit.id }}">{{ visit.doctor_name }} - {{ visit.visit_date.strftime('%Y-%m-%d') }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="instructions" class="form-label">Instructions</label>
+                    <textarea class="form-control" id="instructions" name="instructions" rows="4"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary rounded-pill px-4"><i class="fas fa-save me-2"></i>Add Prescription</button>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="card shadow-sm">
+        <div class="card-header bg-light">
+            <h3 class="h5 mb-0"><i class="fas fa-list me-2"></i>Prescriptions</h3>
+        </div>
+        <div class="card-body">
+            {% if prescriptions %}
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        {% if current_user.role in ['admin', 'doctor'] %}
+                        <th>User</th>
+                        {% endif %}
+                        <th>Date</th>
+                        <th>Medication</th>
+                        <th>Dosage</th>
+                        <th>Instructions</th>
+                        <th>Related Visit</th>
+                        {% if current_user.role in ['admin', 'doctor'] %}
+                        <th>Actions</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for prescription in prescriptions %}
+                    <tr>
+                        {% if current_user.role in ['admin', 'doctor'] %}
+                        <td>{{ prescription.owner.email if prescription.owner else 'Unknown' }}</td>
+                        {% endif %}
+                        <td>{{ prescription.prescribed_date.strftime('%Y-%m-%d') }}</td>
+                        <td>{{ prescription.medication }}</td>
+                        <td>{{ prescription.dosage or 'N/A' }}</td>
+                        <td>{{ prescription.instructions or 'No instructions' }}</td>
+                        <td>
+                            {% if prescription.visit %}
+                            {{ prescription.visit.doctor_name }} - {{ prescription.visit.visit_date.strftime('%Y-%m-%d') }}
+                            {% else %}
+                            None
+                            {% endif %}
+                        </td>
+                        {% if current_user.role in ['admin', 'doctor'] %}
+                        <td>
+                            <a href="{{ url_for('documents.edit_prescription', prescription_id=prescription.id) }}" class="btn btn-sm btn-outline-primary"><i class="fas fa-edit"></i> Edit</a>
+                            {% if current_user.role == 'admin' or (current_user.role == 'doctor' and not prescription.visit_id) %}
+                            <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deletePrescriptionModal{{ prescription.id }}"><i class="fas fa-trash"></i> Delete</button>
+                            <!-- Delete Confirmation Modal -->
+                            <div class="modal fade" id="deletePrescriptionModal{{ prescription.id }}" tabindex="-1" aria-labelledby="deletePrescriptionModalLabel{{ prescription.id }}" aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="deletePrescriptionModalLabel{{ prescription.id }}">Confirm Deletion</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            Are you sure you want to delete the prescription for "{{ prescription.medication }}" dated {{ prescription.prescribed_date.strftime('%Y-%m-%d') }}?
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                            <form action="{{ url_for('documents.delete_prescription', prescription_id=prescription.id) }}" method="POST">
+                                                <button type="submit" class="btn btn-danger">Delete</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </td>
+                        {% endif %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p>No prescriptions recorded.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

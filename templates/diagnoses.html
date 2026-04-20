@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Diagnoses{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <header class="pb-3 mb-4 border-bottom">
+        <h1 class="h2"><i class="fas fa-diagnoses me-2"></i>Manage Diagnoses</h1>
+    </header>
+
+    {% if current_user.role in ['doctor', 'admin'] %}
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <hQV3 class="h5 mb-0"><i class="fas fa-plus-circle me-2"></i>Add New Diagnosis</h3>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('documents.manage_diagnoses') }}">
+                <div class="mb-3">
+                    <label for="user_id" class="form-label">Patient</label>
+                    <select class="form-select" id="user_id" name="user_id" required>
+                        <option value="">Select a patient</option>
+                        {% for user in users %}
+                        <option value="{{ user.id }}">{{ user.email }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="condition" class="form-label">Condition</label>
+                    <input type="text" class="form-control" id="condition" name="condition" required>
+                </div>
+                <div class="mb-3">
+                    <label for="diagnosis_date" class="form-label">Diagnosis Date</label>
+                    <input type="date" class="form-control" id="diagnosis_date" name="diagnosis_date" required>
+                </div>
+                <div class="mb-3">
+                    <label for="visit_id" class="form-label">Related Doctor Visit (Optional)</label>
+                    <select class="form-select" id="visit_id" name="visit_id">
+                        <option value="">None</option>
+                        {% for visit in visits %}
+                        <option value="{{ visit.id }}">{{ visit.doctor_name }} - {{ visit.visit_date.strftime('%Y-%m-%d') }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="details" class="form-label">Details</label>
+                    <textarea class="form-control" id="details" name="details" rows="4"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary rounded-pill px-4"><i class="fas fa-save me-2"></i>Add Diagnosis</button>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="card shadow-sm">
+        <div class="card-header bg-light">
+            <h3 class="h5 mb-0"><i class="fas fa-list me-2"></i>Diagnoses</h3>
+        </div>
+        <div class="card-body">
+            {% if diagnoses %}
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        {% if current_user.role in ['admin', 'doctor'] %}
+                        <th>User</th>
+                        {% endif %}
+                        <th>Date</th>
+                        <th>Condition</th>
+                        <th>Details</th>
+                        <th>Related Visit</th>
+                        {% if current_user.role in ['admin', 'doctor'] %}
+                        <th>Actions</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for diagnosis in diagnoses %}
+                    <tr>
+                        {% if current_user.role in ['admin', 'doctor'] %}
+                        <td>{{ diagnosis.owner.email }}</td>
+                        {% endif %}
+                        <td>{{ diagnosis.diagnosis_date.strftime('%Y-%m-%d') }}</td>
+                        <td>{{ diagnosis.condition }}</td>
+                        <td>{{ diagnosis.details or 'No details' }}</td>
+                        <td>
+                            {% if diagnosis.visit %}
+                            {{ diagnosis.visit.doctor_name }} - {{ diagnosis.visit.visit_date.strftime('%Y-%m-%d') }}
+                            {% else %}
+                            None
+                            {% endif %}
+                        </td>
+                        {% if current_user.role in ['admin', 'doctor'] %}
+                        <td>
+                            <a href="{{ url_for('documents.edit_diagnosis', diagnosis_id=diagnosis.id) }}" class="btn btn-sm btn-outline-primary"><i class="fas fa-edit"></i> Edit</a>
+                            {% if current_user.role == 'admin' or (current_user.role == 'doctor' and not diagnosis.visit_id) %}
+                            <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteDiagnosisModal{{ diagnosis.id }}"><i class="fas fa-trash"></i> Delete</button>
+                            <!-- Delete Confirmation Modal -->
+                            <div class="modal fade" id="deleteDiagnosisModal{{ diagnosis.id }}" tabindex="-1" aria-labelledby="deleteDiagnosisModalLabel{{ diagnosis.id }}" aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="deleteDiagnosisModalLabel{{ diagnosis.id }}">Confirm Deletion</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            Are you sure you want to delete the diagnosis "{{ diagnosis.condition }}" dated {{ diagnosis.diagnosis_date.strftime('%Y-%m-%d') }}?
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                            <form action="{{ url_for('documents.delete_diagnosis', diagnosis_id=diagnosis.id) }}" method="POST">
+                                                <button type="submit" class="btn btn-danger">Delete</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </td>
+                        {% endif %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p>No diagnoses recorded.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

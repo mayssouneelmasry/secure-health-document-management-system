@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Prescription{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <header class="pb-3 mb-4 border-bottom">
+        <h1 class="h2"><i class="fas fa-prescription-bottle me-2"></i>Edit Prescription</h1>
+    </header>
+
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h3 class="h5 mb-0"><i class="fas fa-edit me-2"></i>Update Prescription</h3>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('documents.edit_prescription', prescription_id=prescription.id) }}">
+                <div class="mb-3">
+                    <label for="user_id" class="form-label">Patient</label>
+                    <select class="form-select" id="user_id" name="user_id" required>
+                        <option value="">Select a patient</option>
+                        {% for user in users %}
+                        <option value="{{ user.id }}" {% if user.id == prescription.user_id %}selected{% endif %}>{{ user.email }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="medication" class="form-label">Medication</label>
+                    <input type="text" class="form-control" id="medication" name="medication" value="{{ prescription.medication }}" required>
+                </div>
+                <div class="mb-3">
+                    <label for="dosage" class="form-label">Dosage</label>
+                    <input type="text" class="form-control" id="dosage" name="dosage" value="{{ prescription.dosage or '' }}">
+                </div>
+                <div class="mb-3">
+                    <label for="prescribed_date" class="form-label">Prescribed Date</label>
+                    <input type="date" class="form-control" id="prescribed_date" name="prescribed_date" value="{{ prescription.prescribed_date.strftime('%Y-%m-%d') }}" required>
+                </div>
+                <div class="mb-3">
+                    <label for="visit_id" class="form-label">Related Doctor Visit (Optional)</label>
+                    <select class="form-select" id="visit_id" name="visit_id">
+                        <option value="">None</option>
+                        {% for visit in visits %}
+                        <option value="{{ visit.id }}" {% if prescription.visit_id == visit.id %}selected{% endif %}>{{ visit.doctor_name }} - {{ visit.visit_date.strftime('%Y-%m-%d') }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="instructions" class="form-label">Instructions</label>
+                    <textarea class="form-control" id="instructions" name="instructions" rows="4">{{ prescription.instructions or '' }}</textarea>
+                </div>
+                <button type="submit" class="btn btn-primary rounded-pill px-4"><i class="fas fa-save me-2"></i>Update Prescription</button>
+                <a href="{{ url_for('documents.manage_prescriptions') }}" class="btn btn-secondary rounded-pill px-4">Cancel</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

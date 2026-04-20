@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Doctor Visits{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <header class="pb-3 mb-4 border-bottom">
+        <h1 class="h2"><i class="fas fa-stethoscope me-2"></i>Manage Doctor Visits</h1>
+    </header>
+
+    {% if current_user.role in ['user', 'admin'] %}
+    <div class="p-5 bg-light border rounded-3 shadow-lg mb-4">
+        <h2>Add a New Doctor Visit</h2>
+        <form method="POST" action="{{ url_for('documents.manage_doctor_visits') }}">
+            {% if current_user.role == 'admin' %}
+            <div class="mb-3">
+                <label for="user_id" class="form-label">Patient</label>
+                <select class="form-select" id="user_id" name="user_id" required>
+                    <option value="">Select a patient</option>
+                    {% for user in users %}
+                    <option value="{{ user.id }}">{{ user.email }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+            <div class="mb-3">
+                <label for="visit_date" class="form-label">Visit Date</label>
+                <input type="date" class="form-control" id="visit_date" name="visit_date" required>
+            </div>
+            <div class="mb-3">
+                <label for="doctor_name" class="form-label">Doctor Name</label>
+                <input type="text" class="form-control" id="doctor_name" name="doctor_name" placeholder="Enter doctor's name" required>
+            </div>
+            <div class="mb-3">
+                <label for="notes" class="form-label">Notes</label>
+                <textarea class="form-control" id="notes" name="notes" rows="3" placeholder="Enter any notes about the visit"></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary btn-lg rounded-pill px-4"><i class="fas fa-plus me-2"></i>Add Visit</button>
+            <a href="{{ url_for('documents.dashboard') }}" class="btn btn-secondary btn-lg rounded-pill px-4">Cancel</a>
+        </form>
+    </div>
+    {% endif %}
+
+    <div class="p-5 bg-light border rounded-3 shadow-lg">
+        <h2>{% if current_user.role == 'admin' %}All Users' Doctor Visits{% else %}Your Doctor Visits{% endif %}</h2>
+        {% if visits %}
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    {% if current_user.role in ['admin', 'doctor'] %}
+                    <th>User</th>
+                    {% endif %}
+                    <th>Date</th>
+                    <th>Doctor</th>
+                    <th>Notes</th>
+                    {% if current_user.role in ['user', 'admin'] %}
+                    <th>Actions</th>
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for visit in visits %}
+                <tr>
+                    {% if current_user.role in ['admin', 'doctor'] %}
+                    <td>{{ visit.owner.email }}</td>
+                    {% endif %}
+                    <td>{{ visit.visit_date.strftime('%Y-%m-%d') }}</td>
+                    <td>{{ visit.doctor_name }}</td>
+                    <td>{{ visit.notes or 'No notes' }}</td>
+                    {% if current_user.role in ['user', 'admin'] %}
+                    <td>
+                        {% if current_user.role == 'admin' %}
+                        <a href="{{ url_for('documents.edit_doctor_visit', visit_id=visit.id) }}" class="btn btn-sm btn-outline-primary"><i class="fas fa-edit"></i> Edit</a>
+                        {% endif %}
+                        {% if current_user.role == 'admin' or (current_user.role == 'user' and visit.user_id == current_user.id) %}
+                        <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteVisitModal{{ visit.id }}"><i class="fas fa-trash"></i> Delete</button>
+                        <!-- Delete Confirmation Modal -->
+                        <div class="modal fade" id="deleteVisitModal{{ visit.id }}" tabindex="-1" aria-labelledby="deleteVisitModalLabel{{ visit.id }}" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="deleteVisitModalLabel{{ visit.id }}">Confirm Deletion</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        Are you sure you want to delete the visit with {{ visit.doctor_name }} on {{ visit.visit_date.strftime('%Y-%m-%d') }}?
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                        <form action="{{ url_for('documents.delete_doctor_visit', visit_id=visit.id) }}" method="POST">
+                                            <button type="submit" class="btn btn-danger">Delete</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </td>
+                    {% endif %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p>No doctor visits recorded yet.</p>
+        {% endif %}
+        {% if current_user.role != 'user' %}
+        <a href="{{ url_for('documents.dashboard') }}" class="btn btn-secondary btn-lg rounded-pill px-4">Back to Dashboard</a>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
